@@ -9,14 +9,14 @@ port_number = None
 if len(sys.argv) == 1:
     port_number = 12222
 else:
-    port_number = int(argv[1])
+    port_number = int(sys.argv[1])
 db_name = 'local_map_server.db'
 table_name = 'key_val_table'
 host = '0.0.0.0'
 
 
 conn = sqlite3.connect(db_name)
-conn.execute('CREATE TABLE IF NOT EXISTS ' + table_name + ' (key TEXT, val TEXT);')
+conn.execute('CREATE TABLE IF NOT EXISTS ' + table_name + ' (key TEXT, value TEXT);')
 conn.close()
 
 app = Flask(__name__)
@@ -47,7 +47,7 @@ def service(key):
         if not request.json:
             abort(404)
         value = request.json['value']
-        conn.execute('UPDATE ' + table_name + ' SET val = \''+ value  + '\' WHERE key = \'' + key + '\';')
+        conn.execute('UPDATE ' + table_name + ' SET value = \''+ value  + '\' WHERE key = \'' + key + '\';')
         conn.commit()
         conn.close()
         return jsonify(request.json)
