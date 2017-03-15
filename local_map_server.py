@@ -23,39 +23,69 @@ app = Flask(__name__)
 
 @app.route('/<string:key>', methods=['GET', 'POST', 'PUT', 'DELETE'])
 def service(key):
-    conn = sqlite3.connect(db_name)
+
 
     if request.method == 'GET':
-        cursor = conn.execute('SELECT * from ' + table_name + ' where key = \'' + key + '\';' )
-        results = []
-        for row in cursor:
-            k = row[0]
-            v = row[1]
-            results.append({'key':k, 'value':v})
-
-        conn.close()
+        results = _get_from_db(table_name, key)
         return jsonify({'result':results})
     elif request.method == 'POST':
         if not request.json:
             abort(404)
+        current = _get_from_db(table_name, key)
+        if len(current) >= 1:
+            abort(400)
+
         value = request.json['value']
-        conn.execute('INSERT INTO ' + table_name + ' VALUES (\'' + key + '\', \'' + value  + '\');')
-        conn.commit()
-        conn.close()
+        _insert_into_db(table_name, key, value)
         return jsonify(request.json)
+
     elif request.method == 'PUT':
         if not request.json:
             abort(404)
+        current = _get_from_db(table_name, key)
+        if len(current) == 0:
+            abort(400)
+
         value = request.json['value']
-        conn.execute('UPDATE ' + table_name + ' SET value = \''+ value  + '\' WHERE key = \'' + key + '\';')
-        conn.commit()
-        conn.close()
+        _update_value(table_name, key, value)
         return jsonify(request.json)
+
     elif request.method == 'DELETE':
-        conn.execute('DELETE FROM ' + table_name + ' WHERE key = \'' + key + '\';')
-        conn.commit()
-        conn.close()
+        current = _get_from_db(table_name, key)
+        if len(current) == 0:
+            abort(400)
+
+        _delete_entry(table_name, key)
         return 'Successfully deleted ' + key
+
+def _delete_entry(table_name, key):
+    conn = sqlite3.connect(db_name)
+    conn.execute('DELETE FROM ' + table_name + ' WHERE key = \'' + key + '\';')
+    conn.commit()
+    conn.close()
+
+def _update_value(table_name, key, value):
+    conn = sqlite3.connect(db_name)
+    conn.execute('UPDATE ' + table_name + ' SET value = \''+ value  + '\' WHERE key = \'' + key + '\';')
+    conn.commit()
+    conn.close()
+
+def _insert_into_db(table_name, key, value):
+    conn = sqlite3.connect(db_name)
+    conn.execute('INSERT INTO ' + table_name + ' VALUES (\'' + key + '\', \'' + value  + '\');')
+    conn.commit()
+    conn.close()
+
+def _get_from_db(table_name, key):
+    conn = sqlite3.connect(db_name)
+    cursor = conn.execute('SELECT * from ' + table_name + ' where key = \'' + key + '\';' )
+    results = []
+    for row in cursor:
+        k = row[0]
+        v = row[1]
+        results.append({'key':k, 'value':v})
+    conn.close()
+    return results
 
 if __name__ == '__main__':
     app.run(host=host, port=port_number)
