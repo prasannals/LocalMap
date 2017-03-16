@@ -27,7 +27,7 @@ def service(key):
 
     if request.method == 'GET':
         results = _get_from_db(table_name, key)
-        return jsonify({'result':results})
+        return jsonify({'results':results})
     elif request.method == 'POST':
         if not request.json:
             abort(404)
